@@ -1,11 +1,13 @@
-const addBtn=document.getElementById("addBtn");
-const taskinput=document.getElementById("taskinput")
-const taskList=document.getElementById("taskList")
+const taskInput = document.getElementById('taskinput');
+const dateInput = document.getElementById('dateinput');
+const addBtn = document.getElementById('addBtn');
+const errorMessage = document.getElementById('errorMessage');
 
-addBtn.addEventListener("click",()=>{
-    const task =taskinput.value.trim()
-    if(task==""){
-        alert("Enter a task please");
-        return;       
-    }
-})
+addBtn.addEventListener('click', () => {
+  const taskValue = taskInput.value.trim();
+  if (taskValue === '') {
+    errorMessage.classList.remove('hidden');
+    return;
+  }
+  errorMessage.classList.add('hidden');
+});
