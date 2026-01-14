@@ -5,13 +5,31 @@ const errorMessage = document.getElementById('errorMessage');
 const taskList = document.getElementById('taskList');
 const pagination = document.getElementById('panigation');
 
-const tasks = [];
+let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 const tasksPerPage = 5;
 let currentPage = 1;
 let editingIndex = -1;
+let filterType = 'all';
+
+const filterBtns = document.querySelectorAll('.flex.gap-2 button');
+
+function saveTasks() {
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+}
 
 addBtn.addEventListener('click', addTask);
 taskInput.addEventListener('keypress', (e) => e.key === 'Enter' && addTask());
+
+filterBtns.forEach((btn, i) => {
+  btn.onclick = () => {
+    filterBtns.forEach(b => b.className = 'px-3 py-1 rounded-full text-sm text-slate-600 bg-slate-100');
+    btn.className = 'px-3 py-1 rounded-full text-sm bg-purple-600 text-white font-medium';
+    filterType = i === 0 ? 'all' : i === 1 ? 'pending' : 'completed';
+    currentPage = 1;
+    renderTasks();
+    renderPagination();
+  };
+});
 
 function addTask() {
   const taskValue = taskInput.value.trim();
@@ -31,18 +49,26 @@ function addTask() {
     tasks.unshift({ text: taskValue, completed: false });
   }
   
+  saveTasks();
   taskInput.value = '';
   renderTasks();
   renderPagination();
 }
 
+function getFilteredTasks() {
+  if (filterType === 'pending') return tasks.filter(t => !t.completed);
+  if (filterType === 'completed') return tasks.filter(t => t.completed);
+  return tasks;
+}
+
 function renderTasks() {
   taskList.innerHTML = '';
+  const filtered = getFilteredTasks();
   const start = (currentPage - 1) * tasksPerPage;
-  const current = tasks.slice(start, start + tasksPerPage);
+  const current = filtered.slice(start, start + tasksPerPage);
 
-  if (!current.length && !tasks.length) {
-    taskList.innerHTML = '<div class="text-center py-12 text-gray-400">No tasks yet ✨</div>';
+  if (!current.length && !filtered.length) {
+    taskList.innerHTML = '<div class="text-center py-12 text-gray-400">No tasks ✨</div>';
     return;
   }
 
@@ -65,14 +91,18 @@ function renderTasks() {
       span.classList.toggle('line-through');
       span.classList.toggle('text-gray-400');
       completeBtn.className = `px-3 py-1 rounded text-sm font-medium ${task.completed ? 'bg-green-500 text-white' : 'border border-gray-300'}`;
+      saveTasks();
+      renderTasks();
+      renderPagination();
     };
 
     const editBtn = document.createElement('button');
     editBtn.textContent = 'Edit';
     editBtn.className = 'px-3 py-1 border border-blue-500 text-blue-500 rounded text-sm font-medium';
     editBtn.onclick = () => {
+      const actualIndex = tasks.indexOf(task);
       taskInput.value = task.text;
-      editingIndex = start + i;
+      editingIndex = actualIndex;
       addBtn.textContent = 'Update';
       taskInput.focus();
     };
@@ -81,8 +111,9 @@ function renderTasks() {
     deleteBtn.textContent = 'Delete';
     deleteBtn.className = 'px-3 py-1 border border-red-500 text-red-500 rounded text-sm font-medium';
     deleteBtn.onclick = () => {
-      tasks.splice(start + i, 1);
-      if (current.length === 1 && currentPage > 1) currentPage--;
+      const actualIndex = tasks.indexOf(task);
+      tasks.splice(actualIndex, 1);
+      saveTasks();
       renderTasks();
       renderPagination();
     };
@@ -98,7 +129,8 @@ function renderTasks() {
 
 function renderPagination() {
   pagination.innerHTML = '';
-  const total = Math.ceil(tasks.length / tasksPerPage);
+  const filtered = getFilteredTasks();
+  const total = Math.ceil(filtered.length / tasksPerPage);
   if (total <= 1) return;
 
   for (let i = 1; i <= total; i++) {
