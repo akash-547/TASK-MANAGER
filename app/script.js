@@ -41,14 +41,21 @@ function addTask() {
     return;
   }
   
+  // Generate auto fix date (7 days from today)
+  const fixDate = new Date();
+  fixDate.setDate(fixDate.getDate() + 7);
+  const formattedDate = fixDate.toISOString().split('T')[0];
+  
+  // edit new task set 
   if (editingIndex !== -1) {
     tasks[editingIndex].text = taskValue;
     editingIndex = -1;
     addBtn.textContent = 'Add';
   } else {
-    tasks.unshift({ text: taskValue, completed: false });
+    tasks.unshift({ text: taskValue, completed: false, fixDate: formattedDate });
   }
   
+  // save and render
   saveTasks();
   taskInput.value = '';
   renderTasks();
@@ -67,18 +74,23 @@ function renderTasks() {
   const start = (currentPage - 1) * tasksPerPage;
   const current = filtered.slice(start, start + tasksPerPage);
 
-  if (!current.length && !filtered.length) {
-    taskList.innerHTML = '<div class="text-center py-12 text-gray-400">No tasks ✨</div>';
-    return;
-  }
-
   current.forEach((task, i) => {
     const li = document.createElement('li');
     li.className = 'flex justify-between items-center p-3 border border-gray-200 rounded-lg mb-2';
 
+    const textDiv = document.createElement('div');
+    textDiv.className = 'flex-1';
+
     const span = document.createElement('span');
     span.textContent = task.text;
-    span.className = `flex-1 ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`;
+    span.className = `block ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`;
+
+    const dateSpan = document.createElement('span');
+    dateSpan.textContent = ` ${task.fixDate || 'No date'}`;
+    dateSpan.className = 'block text-xs text-gray-500 mt-1';
+
+    textDiv.appendChild(span);
+    textDiv.appendChild(dateSpan);
 
     const btnDiv = document.createElement('div');
     btnDiv.className = 'flex gap-2';
@@ -121,7 +133,7 @@ function renderTasks() {
     btnDiv.appendChild(completeBtn);
     btnDiv.appendChild(editBtn);
     btnDiv.appendChild(deleteBtn);
-    li.appendChild(span);
+    li.appendChild(textDiv);
     li.appendChild(btnDiv);
     taskList.appendChild(li);
   });
